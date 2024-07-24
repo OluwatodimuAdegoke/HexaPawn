@@ -13,12 +13,14 @@ colorplayer2 = (0,0,255)
 
 # board class
 class Board:
-    def __init__(self):
+    def __init__(self,player1,player2):
         self.board = [[2, 2, 2], [0, 0, 0], [1, 1, 1]]
         # self.turn = 0
-        self.current_player = 1
+        self.current_player = player1
         self.player_pieces = 3
-        self.ai_pieces = 1
+        self.ai_pieces = 3
+        self.player1 = player1
+        self.player2 = player2
 
     # Returns the piece at a given row and column
     def get_piece_at(self, row, col):
@@ -26,9 +28,9 @@ class Board:
     
     # Moves the piece to the new row and column. Check if it's valid before moving
     def move_piece(self,row, col, new_row, new_col):
-        if(self.current_player == 1 and self.get_piece_at(new_row, new_col) == 2):
+        if(self.current_player ==  self.player1 and self.get_piece_at(new_row, new_col) == 2):
             self.ai_pieces -= 1
-        elif(self.current_player == 2 and self.get_piece_at(new_row, new_col) == 1):    
+        elif(self.current_player == self.player2 and self.get_piece_at(new_row, new_col) == 1):    
             self.player_pieces -= 1
             
         self.board[new_row][new_col] = self.board[row][col]
@@ -37,65 +39,138 @@ class Board:
 
     # Checks if the move is valid by checking the current player, the position of the new colums and rows and also valid moves
     def is_valid_move(self, row, col, new_row, new_col, curr_player):
+        if self.board[row][col] == self.board[new_row][new_col]:
+            return False
         if(self.board[row][col] != curr_player):
             return False
         if(new_col < 0 or new_col > 2 or new_row < 0 or new_row > 2):
             return False
-        if(self.current_player == 1):
-            if(new_row == row - 1 and new_col == col):
+        if(self.current_player == self.player1):
+            if(new_row == row - 1 and new_col == col and self.board[new_row][new_col] == 0):
                 return True
-            if(new_row == row - 1 and new_col == col + 1 ):
+            if(new_row == row - 1 and new_col == col + 1 and self.board[new_row][new_col] == 2):
                 return True
-            if(new_row == row - 1 and new_col == col - 1 ):
+            if(new_row == row - 1 and new_col == col - 1 and self.board[new_row][new_col] == 2):
                 return True
             return False
         else:
-            if(new_row == row + 1 and new_col == col):
+            if(new_row == row + 1 and new_col == col and self.board[new_row][new_col] == 0):
                 return True
-            if(new_row == row + 1 and new_col == col + 1 ):
+            if(new_row == row + 1 and new_col == col + 1 and self.board[new_row][new_col] == 1):
                 return True
-            if(new_row == row + 1 and new_col == col - 1 ):
+            if(new_row == row + 1 and new_col == col - 1 and self.board[new_row][new_col] == 1):
                 return True
             return False
         
     # Checks if the current player has won. Returns true if the current player has won, false otherwise
     def check_win_condition(self):
-        if(self.current_player == 2):
+        if(self.current_player == self.player1):
             if(self.board[0][0] == 1 or self.board[0][1] == 1 or self.board[0][2] == 1):
+                print("First row")
                 return True
             if(self.ai_pieces == 0):
+                print("AI has no pieces")
                 return True
             return False
         else:
             if(self.board[2][0] == 2 or self.board[2][1] == 2 or self.board[2][2] == 2):
+                print("Last row")
                 return True
             if(self.player_pieces == 0):
+                print("Player has no pieces")
                 return True
             return False
+        
+    def has_valid_moves(self):
+        for i in range(3):
+            for j in range(3):
+                if(self.board[i][j] == self.current_player.player):
+                    if(self.current_player == self.player1):
+                        if(i - 1 >= 0 and self.board[i-1][j] == 0):
+                            return True
+                        if(i - 1 >= 0 and j + 1 < 3 and self.board[i-1][j+1] == 2):
+                            return True
+                        if(i - 1 >= 0 and j - 1 >= 0 and self.board[i-1][j-1] == 2):
+                            return True
+                    else:
+                        if(i + 1 < 3 and self.board[i+1][j] == 0):
+                            return True
+                        if(i + 1 < 3 and j + 1 < 3 and self.board[i+1][j+1] == 1):
+                            return True
+                        if(i + 1 < 3 and j - 1 >= 0 and self.board[i+1][j-1] == 1):
+                            return True
+        return False
 
 class Player:
-    def __init__(self, player):
+    def __init__(self, player, type):
+        self.type = type
         self.player = player
         self.state = 0
         self.picked_pos = (0,0)
 
-    def make_move(self,board):
-        print("AI Turn")
-        # Make the AI Move
+    def make_move(self,board, row, col):
+        if self.type == "player1":
+            if self.state == 0 and board.get_piece_at(row, col) == 1:
+                print("Picked up piece")
+                self.state = 1
+                self.picked_pos = (row, col)
+                return False
+            elif self.state == 1 and self.picked_pos == (row, col):
+                print("Dropped piece")
+                self.state = 0
+                return False
+            elif self.state == 1 and board.is_valid_move(self.picked_pos[0], self.picked_pos[1], row, col, self.player):
+                print("Moved piece")
+                board.move_piece(self.picked_pos[0], self.picked_pos[1], row, col)
+                self.state = 0
+                return True
+        elif self.type == "player2":
+            if self.state == 0 and board.get_piece_at(row, col) == 2:
+                print("Picked up piece")
+                self.state = 1
+                self.picked_pos = (row, col)
+                return False
+            elif self.state == 1 and self.picked_pos == (row, col):
+                print("Dropped piece")
+                self.state = 0
+                return False
+            elif self.state == 1 and board.is_valid_move(self.picked_pos[0], self.picked_pos[1], row, col, self.player):
+                print("Moved piece")
+                board.move_piece(self.picked_pos[0], self.picked_pos[1], row, col)
+                self.state = 0
+                return True
+        return False
+
+
+    
+    def ai_move(self,board):
+        print("AI move")
         return 0
+
 
 class Game:
     def __init__(self,screen):
         self.screen = screen
-        self.board = Board()
-        self.player = Player(1)
-        self.ai = Player(2)
+        
+        self.player1 = Player(1, "player1")
+        self.player2 = Player(2, "player2")
+        self.board = Board(self.player1, self.player2)
+
 
     def switch_turn(self):
-        if(self.board.current_player == 1):
-            self.board.current_player = 2
+        if self.board.check_win_condition():
+            print("Player 1" if str(self.board.current_player) == 1 else "Player 2" + " has won")
+            pygame.quit()
+        
+        if(self.board.current_player == self.player1):
+            self.board.current_player = self.player2
         else:
-            self.board.current_player = 1
+            self.board.current_player = self.player1
+
+        if not self.board.has_valid_moves():
+            print("It's a draw ")
+            pygame.quit()
+
     def handle_events(self,event):
         # Check if the event is a mouse click
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -105,19 +180,12 @@ class Game:
             row = pos[1] // 50
             col = pos[0] // 50
             print(row, col)
-            if self.board.current_player == 1 and self.player.state == 0 and self.board.get_piece_at(row, col) == 1:
-                print("Picked up piece")
-                self.player.state = 1
-                self.picked_pos = (row, col)
-            elif self.board.current_player == 1 and self.player.state == 1 and self.picked_pos == (row, col):
-                print("Dropped piece")
-                self.player.state = 0
-            elif self.board.current_player == 1 and self.player.state == 1 and self.board.is_valid_move(self.picked_pos[0], self.picked_pos[1], row, col, 1):
-                print("Moved piece")
-                self.board.move_piece(self.picked_pos[0], self.picked_pos[1], row, col)
+            if self.board.current_player == self.player1:
+                move = self.player1.make_move(self.board, row, col)
+            else:
+                move = self.player2.make_move(self.board, row, col)
+            if move:
                 self.switch_turn()
-                self.player.state = 0
-
             print(self.board.board)
         return 0
     def update(self):
@@ -154,8 +222,6 @@ class Game:
         font = pygame.font.Font("freesansbold.ttf", 15)
         textAI = font.render("AI : " + str(self.board.ai_pieces), True, (0,0,0))
         textPlayer = font.render("P : " + str(self.board.player_pieces), True, (0,0,0))
-        # scoreAI = font.render(str(self.board.ai_pieces), True, (0,0,0))
-        # scorePlayer = font.render(str(self.board.player_pieces), True, (0,0,0))
         if self.board.current_player == 1:
             pygame.draw.circle(self.screen, colorplayer1, (170, 120), 15)
         else:
@@ -195,21 +261,13 @@ def main():
                 pygame.quit()
                 sys.exit()
             game.handle_events(event)
-
+            if game.board.current_player.type == "ai":
+                game.board.current_player.ai_move(game.board)
+                game.switch_turn()
         screen.fill(colorbg)
         game.draw()
-        if game.board.check_win_condition():
-            # Handle this better
-            print("Player 1" if str(game.board.current_player) == 2 else "Player 0" + " has won")
-            pygame.quit()
-        
-        if game.board.current_player == 2:
-            game.ai.make_move(game.board)
-            game.switch_turn()
-
         pygame.display.update()
         FramePerSec.tick(FPS)
-        # render()
 
    
 # run the main function only if this module is executed as the main script
