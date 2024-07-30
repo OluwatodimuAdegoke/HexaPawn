@@ -256,25 +256,3 @@ class Game:
             pygame.draw.circle(self.screen, PLAYER2_COLOR, (185, 90), 20)
         self.screen.blit(textPlayer1, (165, 50))
         self.screen.blit(textPlayer2, (165, 30))
-        # Initialize the game screen
-        self.screen = screen
-
-        # Create player objects
-        self.player1 = Player(0)
-        self.player2 = Player(1)
-
-        # Set the current player to player 1
-        self.current_player = self.player1
-
-        # Create the game board
-        self.board = Board(self.player1, self.player2)
-
-        # Initialize player scores
-        self.player1Score = 0
-        self.player2Score = 0
-
-        # Initialize the last move
-        self.last_move = None
-
-        # Initialize the configurations dictionary
-        self.configurations = {}
