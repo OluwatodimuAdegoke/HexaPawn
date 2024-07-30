@@ -96,6 +96,7 @@ class Board:
                         if(i + 1 < 3 and j - 1 >= 0 and self.board[i+1][j-1] == self.player1):
                             return True
         return False
+
     
 
 
@@ -118,6 +119,7 @@ class Game:
         self.player2Score = 0
         self.last_move = None
         self.configurations = {}
+
 
     def make_move(self,player, row, col):
         if player.state == 0 and self.board.get_piece_at(row, col) == player:
@@ -221,9 +223,12 @@ class Game:
         return False
 
     def draw(self):
+        self.draw_valid_move()
         self.draw_board()
         self.draw_pawns()
         self.draw_ui()
+        self.draw_reset_button()
+
      
     # Draw the board
     def draw_board(self):
@@ -251,13 +256,35 @@ class Game:
         button_rect = pygame.Rect(170, 115, 30, 30)
         
         # Draw the button
-        pygame.draw.rect(self.screen, reset_button, button_rect)
         pygame.draw.rect(self.screen, (0, 0, 0), button_rect, 2)  # Border
         
         # Draw the text
         text = font.render("R", True, (0, 0, 0))
         text_rect = text.get_rect(center=button_rect.center)
         self.screen.blit(text, text_rect)
+
+    def draw_valid_move(self):
+        if self.current_player.state == 1:
+            row = self.current_player.picked_pos[0]
+            col = self.current_player.picked_pos[1]
+            overlay = pygame.Surface((48, 48), pygame.SRCALPHA)
+            
+            overlay.fill((200,200, 200, 200))  
+            can_move = False
+            if row - 1 >= 0 and self.board.board[row - 1][col] == 0:
+                self.screen.blit(overlay, (col*50+2, (row-1)*50 +2))
+                can_move = True
+            if row - 1 >= 0 and col + 1 < 3 and self.board.board[row - 1][col + 1] == self.player2:
+                self.screen.blit(overlay, ((col+1)*50+2, (row-1)*50+2))
+                can_move = True
+            if row - 1 >= 0 and col - 1 >= 0 and self.board.board[row - 1][col - 1] == self.player2:
+                self.screen.blit(overlay, ((col-1)*50+2, (row-1)*50+2))
+                can_move = True
+            if not can_move:
+                overlay.fill((255,0, 0, 100))
+                self.screen.blit(overlay, (col*50+2, (row)*50 +2))
+                
+
 
     # Draw the UI
     def draw_ui(self):
@@ -272,7 +299,6 @@ class Game:
             pygame.draw.circle(self.screen, colorplayer2, (185, 90), 20)
         self.screen.blit(textPlayer1, (165, 50))
         self.screen.blit(textPlayer2, (165, 30))
-        self.draw_reset_button()
         return 0
 
     
