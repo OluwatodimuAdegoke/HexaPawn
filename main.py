@@ -5,7 +5,10 @@ colorbg = (255,255,255)
 colorline = (128,128,128)
 colorplayer1 = (255,0,0)
 colorplayer2 = (0,0,255)
-
+global ai
+global p
+ai = 0
+p = 0
 # type of piece
 # 0 = empty
 # 1 = player 1
@@ -15,13 +18,11 @@ colorplayer2 = (0,0,255)
 class Board:
     def __init__(self,player1,player2):
         self.board = [[2, 2, 2], [0, 0, 0], [1, 1, 1]]
-        # self.turn = 0
         self.current_player = player1
         self.player_pieces = 3
         self.ai_pieces = 3
         self.player1 = player1
         self.player2 = player2
-        self.configurations = {} # Store configurations not to repeat
     # Returns the piece at a given row and column
     def get_piece_at(self, row, col):
         return self.board[row][col]
@@ -36,11 +37,6 @@ class Board:
         self.board[new_row][new_col] = self.board[row][col]
         self.board[row][col] = 0
 
-    def reset_board(self):
-        self.board = [[2, 2, 2], [0, 0, 0], [1, 1, 1]]
-        self.current_player = self.player1
-        self.player_pieces = 3
-        self.ai_pieces = 3
 
     # Checks if the move is valid by checking the current player, the position of the new colums and rows and also valid moves
     def is_valid_move(self, row, col, new_row, new_col, curr_player):
@@ -108,8 +104,7 @@ class Board:
         return False
     
 
-ai_config = {
-}
+
 class Player:
     def __init__(self, player, type):
         self.type = type
@@ -132,7 +127,8 @@ class Player:
                 self.state = 0
                 return False
             elif self.state == 1 and board.is_valid_move(self.picked_pos[0], self.picked_pos[1], row, col, self.player):
-                print("Moved piece")
+                print("Player 1 has moved")
+             
                 board.move_piece(self.picked_pos[0], self.picked_pos[1], row, col)
                 self.state = 0
                 return True
@@ -147,7 +143,7 @@ class Player:
                 self.state = 0
                 return False
             elif self.state == 1 and board.is_valid_move(self.picked_pos[0], self.picked_pos[1], row, col, self.player):
-                print("Moved piece")
+                print("Player 2 has moved")
                 board.move_piece(self.picked_pos[0], self.picked_pos[1], row, col)
                 self.state = 0
                 return True
@@ -176,15 +172,30 @@ class Player:
                             newBoard[i+1][j+k] = self.player
                             if not self.check_configuration(newBoard):
                                 self.last_move = self.board_to_tuple(newBoard)
+                                pygame.time.wait(1000)
                                 board.board = newBoard
+                                print("AI has moved")
                                 return True
         return False
+    
+    def human_move(self,event,board):
+        hasMoved = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+        # Get the position of the mouse
+            pos = pygame.mouse.get_pos()
+            # Get the row and column of the mouse click
+            row = pos[1] // 50
+            col = pos[0] // 50
+            if board.current_player == self.player:
+                hasMoved = self.make_move(board, row, col)
+            else:
+                hasMoved = self.make_move(board, row, col)
+        return hasMoved
 
 
 class Game:
     def __init__(self,screen):
         self.screen = screen
-        
         self.player1 = Player(1, "player1")
         self.player2 = Player(2, "ai")
         self.board = Board(self.player1, self.player2)
@@ -192,30 +203,28 @@ class Game:
     def finish_game(self,type):
         if type == "player1":
             print("Player 1 has won")
+            global p
+            p = p + 1
             self.player2.store_configuration(self.player2.last_move)
         elif type == "player2":
+            global ai
+            ai += 1
             print("AI has won")
         else:
             self.player2.store_configuration(self.player2.last_move)
             print("It's a draw")
-        print("Resetting board")
         print(self.player2.configurations)
-        self.board.reset_board()
+        print("AI: "+ str(ai) +" Player: "+ str(p))
+        pygame.time.wait(1000)
         return
-        # pygame.quit()
-
+    
     def switch_turn(self):
-        if self.board.check_win_condition():
-            self.finish_game("player1" if self.board.current_player == self.player1 else "player2")
+        if self.check_win_condition():
             return
-        
         if(self.board.current_player == self.player1):
             self.board.current_player = self.player2
         else:
             self.board.current_player = self.player1
-
-        if not self.board.has_valid_moves():
-            self.finish_game("draw")
 
     def handle_events(self,event):
         # Check if the event is a mouse click
@@ -225,18 +234,19 @@ class Game:
             # Get the row and column of the mouse click
             row = pos[1] // 50
             col = pos[0] // 50
-            print(row, col)
             if self.board.current_player == self.player1:
                 move = self.player1.make_move(self.board, row, col)
             else:
                 move = self.player2.make_move(self.board, row, col)
-            if move:
-                self.switch_turn()
-            print(self.board.board)
-        return 0
+            return move
+        return False
+    
     def update(self):
         # Update the game
         return 0
+    
+    def reset_game(self):
+        self.board = Board(self.player1, self.player2)
 
     def draw(self):
         self.draw_board()
@@ -278,6 +288,16 @@ class Game:
 
         return 0
 
+    def check_win_condition(self):
+        if self.board.check_win_condition():
+            self.finish_game("player1" if self.board.current_player == self.player1 else "player2")
+            self.reset_game()
+            return True
+        elif not self.board.has_valid_moves():
+            self.finish_game("draw")
+            self.reset_game()
+            return True
+        return False
  
 # define a main function
 def main():
@@ -296,21 +316,30 @@ def main():
 
     
     game = Game(screen=screen)
+    game.board.current_player = game.player1
     screen.fill(colorbg)
+
 
     # main loop
     while True:
-        # event handling, gets all event from the event queue
+ 
         for event in pygame.event.get():
             # only do something if the event is of type QUIT
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            game.handle_events(event)
             if game.board.current_player.type == "ai":
                 if not game.board.current_player.ai_move(game.board):
                     game.finish_game("player1")
                 game.switch_turn()
+              
+            else:
+                # res = game.handle_events(event)
+                if game.board.current_player.human_move(event,game.board):
+                    game.switch_turn()
+        
+                
+                
         screen.fill(colorbg)
         game.draw()
         pygame.display.update()
