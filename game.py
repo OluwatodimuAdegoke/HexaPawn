@@ -1,4 +1,5 @@
 import pygame
+import random
 from board import Board
 from player import Player
 from constants import PLAYER1_COLOR, PLAYER2_COLOR, LINE_COLOR, VALID_MOVE_COLOR
@@ -21,6 +22,7 @@ class Game:
         self.player2Score = 0
         self.last_move = None
         self.configurations = {}
+        self.good_configurations = {}
         self.game_over = False
         self.winner = None
 
@@ -43,6 +45,8 @@ class Game:
             return True
         return False
 
+
+
     def board_to_tuple(self, board):
         """
         Converts the game board to a tuple.
@@ -51,21 +55,27 @@ class Game:
         """
         return tuple([tuple(row) for row in board])
 
-    def store_configuration(self, newBoard):
+    def store_configuration(self, newBoard, type):
         """
         Stores a game configuration in the configurations dictionary.
         """
-        self.configurations[self.board_to_tuple(newBoard)] = True
+        if type == "good":
+            self.good_configurations[self.board_to_tuple(newBoard)] = True
+        else:
+            self.configurations[self.board_to_tuple(newBoard)] = True
 
-    def check_configuration(self, newBoard):
+    def check_configuration(self, newBoard, type):
         """
         Checks if a game configuration exists in the configurations dictionary.
         Returns:
         - True if the configuration exists, False otherwise.
         """
-        if self.board_to_tuple(newBoard) in self.configurations:
+        if type == "good" and self.board_to_tuple(newBoard) in self.good_configurations:
+            return True
+        elif type == "bad" and self.board_to_tuple(newBoard) in self.configurations:
             return True
         return False
+    
 
     def ai_move(self):
         """
@@ -73,6 +83,7 @@ class Game:
         Returns:
         - True if a move is made, False otherwise.
         """
+        valid = []
         for i in range(3):
             for j in range(3):
                 if self.board.get_piece_at(i, j) == self.current_player:
@@ -82,12 +93,17 @@ class Game:
                             newBoard = [row[:] for row in self.board.board]
                             newBoard[i][j] = 0
                             newBoard[i + 1][j + k] = self.current_player
-                            if not self.check_configuration(newBoard):
-                                self.last_move = self.board_to_tuple(newBoard)
-                                pygame.time.wait(500)
+                            if self.check_configuration(newBoard,'good'):
                                 self.board.move_piece(i, j, i + 1, j + k, self.current_player)
-                                pygame.time.wait(500)
+                                self.last_move = self.board_to_tuple(self.board.board)
                                 return True
+                            if not self.check_configuration(newBoard,'bad'):
+                                valid.append((i, j, i + 1, j + k))
+        if len(valid) > 0:
+            val = random.randint(0, len(valid) - 1)
+            self.board.move_piece(valid[val][0], valid[val][1], valid[val][2], valid[val][3], self.current_player)
+            self.last_move = self.board_to_tuple(self.board.board)
+            return True
         return False
 
     def human_move(self, pos):
@@ -111,13 +127,13 @@ class Game:
         """
         if type == "player1":
             self.player1Score += 1
-            self.store_configuration(self.last_move)
+            self.store_configuration(self.last_move,"bad")
             self.winner = "player1"
         elif type == "player2":
             self.player2Score += 1
+            self.store_configuration(self.last_move,"good")
             self.winner = "player2"
         else:
-            self.store_configuration(self.last_move)
             self.winner = "draw"
         self.game_over = True
    
