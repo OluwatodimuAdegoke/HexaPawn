@@ -68,18 +68,14 @@ class Board:
         """
         if player == self.player1:
             if self.board[0][0] == self.player1 or self.board[0][1] == self.player1 or self.board[0][2] == self.player1:
-                print("First row")
                 return True
             if self.ai_pieces == 0:
-                print("AI has no pieces")
                 return True
             return False
         else:
             if self.board[2][0] == self.player2 or self.board[2][1] == self.player2 or self.board[2][2] == self.player2:
-                print("Last row")
                 return True
             if self.player_pieces == 0:
-                print("Player has no pieces")
                 return True
             return False
 

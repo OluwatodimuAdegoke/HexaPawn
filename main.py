@@ -29,16 +29,22 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if game.current_player.type == "ai":
-                if game.ai_move():
-                    game.end_turn()
-                else:
-                    game.finish_game("player1")
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if game.human_move(pygame.mouse.get_pos()):
-                    game.end_turn()
-                elif game.handle_reset_button(pygame.mouse.get_pos()):
-                    continue
+            if game.game_over == False:
+                if game.current_player.type == "ai":
+                    if game.ai_move():
+                        game.end_turn()
+                    else:
+                        game.finish_game("player1")
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if game.human_move(pygame.mouse.get_pos()):
+                        game.end_turn()
+                    elif game.handle_reset_button(pygame.mouse.get_pos()):
+                        continue
+            else:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    game.game_over = False
+                    game.winner = None
+                    game.reset_game()
 
 
         

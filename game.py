@@ -21,6 +21,8 @@ class Game:
         self.player2Score = 0
         self.last_move = None
         self.configurations = {}
+        self.game_over = False
+        self.winner = None
 
     def make_move(self, player, row, col):
         """
@@ -29,16 +31,13 @@ class Game:
         - True if the move is valid and made successfully, False otherwise.
         """
         if player.state == 0 and self.board.get_piece_at(row, col) == player:
-            print("Picked up piece")
             player.state = 1
             player.picked_pos = (row, col)
             return False
         elif player.state == 1 and player.picked_pos == (row, col):
-            print("Dropped piece")
             player.state = 0
             return False
         elif player.state == 1 and self.board.is_valid_move(player.picked_pos[0], player.picked_pos[1], row, col, self.current_player):
-            print("Player 1 has moved")
             self.board.move_piece(player.picked_pos[0], player.picked_pos[1], row, col, player)
             player.state = 0
             return True
@@ -76,9 +75,7 @@ class Game:
         """
         for i in range(3):
             for j in range(3):
-                print("Checking piece at: " + str(i) + " " + str(j))
                 if self.board.get_piece_at(i, j) == self.current_player:
-                    print("AI has picked up piece")
                     moves = [-1, 0, 1]
                     for k in moves:
                         if self.board.is_valid_move(i, j, i + 1, j + k, self.current_player):
@@ -89,7 +86,6 @@ class Game:
                                 self.last_move = self.board_to_tuple(newBoard)
                                 pygame.time.wait(500)
                                 self.board.move_piece(i, j, i + 1, j + k, self.current_player)
-                                print("AI has moved")
                                 pygame.time.wait(500)
                                 return True
         return False
@@ -114,18 +110,18 @@ class Game:
         Finishes the game and updates the scores.
         """
         if type == "player1":
-            print("Player 1 has won")
             self.player1Score += 1
             self.store_configuration(self.last_move)
+            self.winner = "player1"
         elif type == "player2":
             self.player2Score += 1
-            print("AI has won")
+            self.winner = "player2"
         else:
             self.store_configuration(self.last_move)
-            print("It's a draw")
-        print("AI: " + str(self.player2Score) + " Player: " + str(self.player1Score))
-        pygame.time.wait(1000)
-        self.reset_game()
+            self.winner = "draw"
+        self.game_over = True
+   
+        # self.reset_game()
         return
 
     def switch_turn(self):
@@ -146,9 +142,9 @@ class Game:
             self.finish_game("draw")
             return True
         else:
-            print("Switching turn")
             self.switch_turn()
         return False
+
 
     def reset_game(self):
         """
@@ -177,6 +173,7 @@ class Game:
         self.draw_pawns()
         self.draw_ui()
         self.draw_reset_button()
+        self.draw_final()
 
     def draw_board(self):
         """
@@ -256,3 +253,16 @@ class Game:
             pygame.draw.circle(self.screen, PLAYER2_COLOR, (185, 90), 20)
         self.screen.blit(textPlayer1, (165, 50))
         self.screen.blit(textPlayer2, (165, 30))
+
+
+    def draw_final(self):
+        if self.game_over:
+            font = pygame.font.Font("freesansbold.ttf", 20)
+            text = ""
+            if self.winner == "player1":
+                text = font.render("Player 1 wins", True, (0, 0, 0))
+            elif self.winner == "player2":
+                text = font.render("Player 2 wins", True, (0, 0, 0))
+            else:
+                text = font.render("Draw", True, (0, 0, 0))   
+            self.screen.blit(text, (40, 65))
