@@ -37,6 +37,9 @@ To start the game, run the following command:
 python game.py
 ```
 
+![Screenshot 2024-08-08 124339](https://github.com/user-attachments/assets/ecfcddde-46a5-422f-8e44-b0cfa19f7fec)
+![Screenshot 2024-08-08 124358](https://github.com/user-attachments/assets/ca2d407b-714b-4b6e-bddf-d1a60db810d7)
+
 ## Game Rules
 
 1. The game is played on a 3x3 board.
